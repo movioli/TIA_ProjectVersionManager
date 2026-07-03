@@ -6,6 +6,9 @@ This tool runs entirely local (no runtime npm dependencies, Node.js built-ins on
 
 ---
 
+![App Dashboard Interface](assets/dashboard.png)
+
+
 ## Key Features
 
 * **Project Snapshots & Backups:** 
