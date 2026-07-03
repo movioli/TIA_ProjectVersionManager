@@ -1,7 +1,9 @@
 node_modules/
 build/
 dist/
+memory/
 *.tmp
+CLAUDE.md
 
 # dotnet build artifacts
 src/shims/TiaExporter/bin/
@@ -12,3 +14,4 @@ src/shims/TiaExporter/obj/
 .idea/
 .vscode/
 *.user
+
