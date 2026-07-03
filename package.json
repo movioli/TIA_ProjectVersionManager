@@ -1,0 +1,38 @@
+{
+  "name": "tia-project-version-manager",
+  "version": "1.0.1",
+  "description": "Version manager for Siemens TIA Portal projects",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "set NODE_OPTIONS=--max-old-space-size=4096 && node_modules\\.bin\\electron.cmd .",
+    "build": "electron-builder",
+    "build-shim": "dotnet build src/shims/TiaExporter/TiaExporter.csproj -c Release && xcopy /Y src\\shims\\TiaExporter\\bin\\TiaExporter.exe src\\shims\\TiaExporter\\ 2>nul || echo Shim built."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.personal.tia-version-manager",
+    "productName": "TIA Project Version Manager",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "src/**",
+      "assets/**",
+      "README.md",
+      "HELP.md",
+      "!src/shims/TiaExporter/*.cs",
+      "!src/shims/TiaExporter/*.csproj"
+    ],
+    "asarUnpack": [
+      "src/shims/TiaExporter/TiaExporter.exe"
+    ]
+  }
+}

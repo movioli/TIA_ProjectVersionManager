@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+*.tmp
+
+# dotnet build artifacts
+src/shims/TiaExporter/bin/
+src/shims/TiaExporter/obj/
+
+# Developer environments
+.vs/
+.idea/
+.vscode/
+*.user

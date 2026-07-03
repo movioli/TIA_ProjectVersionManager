@@ -1,0 +1,197 @@
+/* ── App shell ──────────────────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Custom title bar ───────────────────────────────────────────────── */
+#titlebar {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  min-height: 38px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+  user-select: none;
+  flex-shrink: 0;
+  padding: 0 var(--space-3);
+  gap: var(--space-3);
+}
+
+#titlebar .app-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.03em;
+  flex: 1;
+}
+
+#titlebar .window-controls {
+  display: flex;
+  gap: var(--space-1);
+  -webkit-app-region: no-drag;
+}
+
+#titlebar .wc-btn {
+  width: 28px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition);
+}
+#titlebar .wc-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+#titlebar .wc-btn.close:hover { background: var(--danger-bg); color: var(--danger); }
+
+/* ── Main layout ────────────────────────────────────────────────────── */
+#workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────── */
+#sidebar {
+  width: 220px;
+  min-width: 180px;
+  max-width: 480px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+#sidebar-header {
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#sidebar-header .section-label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+#project-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2) 0;
+}
+
+#sidebar-footer {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/* ── Main panel ─────────────────────────────────────────────────────── */
+#main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+
+#main-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+  min-height: 52px;
+}
+
+#main-toolbar .project-name-display {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#main-toolbar .toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+#version-list-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+/* ── Progress bar ───────────────────────────────────────────────────── */
+#progress-bar-wrap {
+  height: 3px;
+  background: var(--border);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+#progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 200ms ease;
+}
+#progress-bar-wrap.hidden { display: none; }
+
+/* ── Setup banner ───────────────────────────────────────────────────── */
+#setup-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--warning-bg);
+  border-bottom: 1px solid var(--warning);
+  font-size: var(--font-size-sm);
+  color: var(--warning);
+  flex-shrink: 0;
+}
+#setup-banner span { flex: 1; }
+
+/* ── Empty state ────────────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--space-4);
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-6);
+}
+.empty-state .icon {
+  font-size: 48px;
+  opacity: 0.4;
+}
+.empty-state .title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.empty-state .subtitle {
+  font-size: var(--font-size-sm);
+  max-width: 280px;
+  line-height: 1.5;
+}

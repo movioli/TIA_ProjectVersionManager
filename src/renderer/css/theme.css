@@ -1,0 +1,68 @@
+:root {
+  /* Backgrounds */
+  --bg-app:        #161622;
+  --bg-sidebar:    #1e1e2e;
+  --bg-primary:    #24243a;
+  --bg-elevated:   #2e2e45;
+  --bg-hover:      #363650;
+  --bg-active:     #3d3d5c;
+  --bg-input:      #1a1a2e;
+
+  /* Borders */
+  --border:        #3a3a55;
+  --border-light:  #44445a;
+
+  /* Text */
+  --text-primary:  #cdd6f4;
+  --text-secondary:#a6adc8;
+  --text-muted:    #6c7086;
+  --text-subtle:   #45475a;
+
+  /* Accent (Obsidian purple) */
+  --accent:        #cba6f7;
+  --accent-dim:    #9a73c9;
+  --accent-hover:  #d8b4fe;
+  --accent-bg:     rgba(203, 166, 247, 0.12);
+
+  /* Semantic colors */
+  --success:       #a6e3a1;
+  --success-bg:    rgba(166, 227, 161, 0.12);
+  --warning:       #fab387;
+  --warning-bg:    rgba(250, 179, 135, 0.12);
+  --danger:        #f38ba8;
+  --danger-bg:     rgba(243, 139, 168, 0.12);
+  --info:          #89dceb;
+  --info-bg:       rgba(137, 220, 235, 0.12);
+
+  /* Typography */
+  --font-sans:     'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:     'Cascadia Code', 'Consolas', 'Courier New', monospace;
+  --font-size-xs:  11px;
+  --font-size-sm:  12px;
+  --font-size-base:14px;
+  --font-size-md:  15px;
+  --font-size-lg:  18px;
+  --font-size-xl:  22px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Radius */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
+
+  /* Transitions */
+  --transition: 150ms ease;
+}

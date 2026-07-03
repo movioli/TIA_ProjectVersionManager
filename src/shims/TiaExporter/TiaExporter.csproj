@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>TiaExporter</AssemblyName>
+    <RootNamespace>TiaExporter</RootNamespace>
+    <Nullable>disable</Nullable>
+    <LangVersion>8.0</LangVersion>
+    <!-- Output directly into the shims folder so Electron can find it -->
+    <OutputPath>$(MSBuildProjectDirectory)\bin\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Required for 'dynamic' in SDK-style net472 projects -->
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+</Project>
