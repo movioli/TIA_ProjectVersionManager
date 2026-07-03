@@ -14,6 +14,10 @@ This tool runs entirely local (no runtime npm dependencies, Node.js built-ins on
 * **Project Snapshots & Backups:** 
   * Take complete snapshot copies of active TIA Portal project folders with custom labels, notes, and color-coded tags.
   * Automatic fallback backup creation before restoring older project baselines.
+
+  
+![labels](assets/labels.png)
+
 * **Obsidian-Style Tree View:**
   * Organize TIA projects into nested folder hierarchies (e.g. `Area 1/Line A/Cell 3`) using the `group` property.
   * Real-time fuzzy filtering/search (auto-expands matching paths) and sorting by alphabetical order, snapshots count, or date added.
@@ -25,6 +29,10 @@ This tool runs entirely local (no runtime npm dependencies, Node.js built-ins on
   * Custom Myers-diff engine comparison of exported PLC block code.
   * Discards volatile metadata (such as editor UIds, timestamps, and product versions) to focus strictly on block interfaces and code networks (e.g., SCL code).
   * Robust safety guards (`MAX_DIFF_LINES` limits and trace memory budget) to prevent heap-out-of-memory crashes on massive FBD/LAD block diagrams.
+
+
+![compare](assets/compare.png)
+
 * **SIMATIC Automation Compare Tool (SACT) Integration:**
   * Open individual PLC blocks side-by-side inside the official Siemens SACT comparison tool with a single click.
 
