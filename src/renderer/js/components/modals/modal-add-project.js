@@ -1,6 +1,7 @@
 import { createModal } from './modal-base.js';
 import { el, showToast } from '../../utils/dom.js';
-import { addProject, getProjects } from '../../state.js';
+import { addProject, getProjects, getGroups } from '../../state.js';
+
 
 export async function openAddProjectModal(defaultGroupPath = '') {
   const settings = await window.electronAPI.getSettings();
@@ -37,15 +38,12 @@ export async function openAddProjectModal(defaultGroupPath = '') {
   // ── Name ─────────────────────────────────────────────────────────────
   const nameInput = el('input', { class: 'input', type: 'text', placeholder: 'Project name' });
 
-  // Extract all unique group names currently used by projects
-  const existingGroups = new Set();
-  getProjects().forEach(p => {
-    if (p.group) existingGroups.add(p.group);
-  });
+  // Extract all unique group names (active + empty custom groups)
+  const existingGroups = getGroups();
 
   const datalistId = 'group-suggestions-' + Date.now();
   const datalistEl = el('datalist', { id: datalistId }, 
-    [...existingGroups].sort().map(g => el('option', { value: g }))
+    existingGroups.map(g => el('option', { value: g }))
   );
 
   // ── Group Path ───────────────────────────────────────────────────────

@@ -106,3 +106,20 @@ export function updateProject(id, changes) {
   }
 }
 
+export function getGroups() {
+  const groups = new Set();
+  state.projects.forEach(p => {
+    if (p.group) groups.add(p.group);
+  });
+  try {
+    const customGroups = JSON.parse(localStorage.getItem('tia-custom-groups') || '[]');
+    customGroups.forEach(g => {
+      if (g) groups.add(g);
+    });
+  } catch (e) {
+    console.error('Failed to parse custom groups from localStorage:', e);
+  }
+  return [...groups].sort();
+}
+
+

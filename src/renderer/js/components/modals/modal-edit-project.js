@@ -1,7 +1,8 @@
 import { createModal } from './modal-base.js';
 import { el, showToast } from '../../utils/dom.js';
-import { updateProject, getProjects } from '../../state.js';
+import { updateProject, getProjects, getGroups } from '../../state.js';
 import { api } from '../../api.js';
+
 
 export function openEditProjectModal(project) {
   // Name Input
@@ -12,15 +13,12 @@ export function openEditProjectModal(project) {
     value: project.name || '',
   });
 
-  // Extract all unique group names currently used by projects
-  const existingGroups = new Set();
-  getProjects().forEach(p => {
-    if (p.group) existingGroups.add(p.group);
-  });
+  // Extract all unique group names (active + empty custom groups)
+  const existingGroups = getGroups();
 
   const datalistId = 'group-suggestions-' + Date.now();
   const datalistEl = el('datalist', { id: datalistId }, 
-    [...existingGroups].sort().map(g => el('option', { value: g }))
+    existingGroups.map(g => el('option', { value: g }))
   );
 
   // Group Input

@@ -1,6 +1,6 @@
 import { el, empty, showContextMenu, showToast } from '../utils/dom.js';
 import { on } from '../event-bus.js';
-import { getProjects, getSelectedProjectId, setSelectedProject, removeProject, updateProject } from '../state.js';
+import { getProjects, getSelectedProjectId, setSelectedProject, removeProject, updateProject, getGroups } from '../state.js';
 import { api } from '../api.js';
 import { openAddProjectModal } from './modals/modal-add-project.js';
 
@@ -439,6 +439,13 @@ function renderTree(node, depth, container, selectedId) {
 
       showContextMenu([
         {
+          label: '➕  Add Project...',
+          action: () => {
+            openAddProjectModal(subGroup.fullName);
+          }
+        },
+        'sep',
+        {
           label: '➕  Add Subgroup...',
           action: () => {
             openAddGroupModal(subGroup.fullName, allProjects);
@@ -583,10 +590,7 @@ function renderProjectItem(project, isActive, depth) {
       {
         label: '⇄  Move to Group...',
         action: () => {
-          const allGroups = new Set();
-          getProjects().forEach(p => {
-            if (p.group) allGroups.add(p.group);
-          });
+          const allGroups = getGroups();
 
           const choices = [
             {
@@ -604,7 +608,7 @@ function renderProjectItem(project, isActive, depth) {
             'sep'
           ];
 
-          [...allGroups].sort().forEach(g => {
+          allGroups.forEach(g => {
             choices.push({
               label: `📁  ${g}`,
               action: async () => {
