@@ -1,6 +1,7 @@
 import { createModal } from './modal-base.js';
 import { el, showToast } from '../../utils/dom.js';
 import { emit } from '../../event-bus.js';
+import { getTheme, setTheme } from '../../utils/theme.js';
 
 export async function openSettingsModal() {
   const [settings, version] = await Promise.all([
@@ -113,6 +114,21 @@ export async function openSettingsModal() {
       el('label', { for: 'cb-confirm-restore', style: { fontSize: '13px', cursor: 'pointer' } }, [
         'Show confirmation dialog before restoring a version',
       ]),
+    ]),
+
+    el('div', { class: 'divider' }),
+
+    el('div', { class: 'form-group' }, [
+      el('label', { class: 'form-label' }, ['Application Theme']),
+      (() => {
+        const sel = el('select', { class: 'input', style: { width: 'auto', minWidth: '160px' } }, [
+          el('option', { value: 'dark', selected: getTheme() === 'dark' }, ['🌙  Dark Theme']),
+          el('option', { value: 'light', selected: getTheme() === 'light' }, ['☀️  Light Theme']),
+        ]);
+        sel.addEventListener('change', (e) => setTheme(e.target.value));
+        return sel;
+      })(),
+      el('div', { class: 'form-hint' }, ['Choose between Dark (Obsidian) and Light visual themes.']),
     ]),
 
     el('div', { class: 'divider' }),

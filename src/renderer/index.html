@@ -12,6 +12,12 @@
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/modals.css" />
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('tia-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
 </head>
 <body>
   <div id="app">

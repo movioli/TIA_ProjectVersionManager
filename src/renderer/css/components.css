@@ -17,7 +17,7 @@
 
 .btn-primary {
   background: var(--accent);
-  color: #1e1e2e;
+  color: var(--btn-primary-text, #1e1e2e);
   font-weight: 600;
 }
 .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
@@ -398,6 +398,10 @@
   opacity: 0.9;
 }
 
+[data-theme="light"] .label-badge {
+  filter: contrast(1.3) brightness(0.85);
+}
+
 /* ── Inputs ──────────────────────────────────────────────────────────── */
 .input {
   background: var(--bg-input);
@@ -766,12 +770,11 @@ textarea.input {
   user-select: none;
 }
 
-.diff-add    { background: rgba(166, 227, 161, 0.10); }
-.diff-remove { background: rgba(243, 139, 168, 0.10); }
+.diff-add    { background: var(--success-bg); }
+.diff-remove { background: var(--danger-bg); }
 
-
-.diff-add    .diff-ln     { background: rgba(166, 227, 161, 0.08); }
-.diff-remove .diff-ln     { background: rgba(243, 139, 168, 0.08); }
+.diff-add    .diff-ln     { background: var(--success-bg); }
+.diff-remove .diff-ln     { background: var(--danger-bg); }
 
 .diff-add    .diff-prefix { color: var(--success); font-weight: 700; }
 .diff-remove .diff-prefix { color: var(--danger);  font-weight: 700; }

@@ -544,33 +544,7 @@ function renderProjectItem(project, isActive, depth) {
     ctxBtn,
   ]);
 
-  // Right click context menu on project item
-  item.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    ctxBtn.click();
-  });
-
-  // Drag listeners on project items
-  item.addEventListener('dragstart', (e) => {
-    item.classList.add('dragging');
-    e.dataTransfer.setData('text/plain', project.id);
-    e.dataTransfer.effectAllowed = 'move';
-    document.getElementById('sidebar-root-drop')?.classList.remove('hidden');
-  });
-
-  item.addEventListener('dragend', () => {
-    item.classList.remove('dragging');
-    document.getElementById('sidebar-root-drop')?.classList.add('hidden');
-  });
-
-  item.addEventListener('click', (e) => {
-    if (e.target === ctxBtn) return;
-    setSelectedProject(project.id);
-  });
-
-  ctxBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  function openProjectContextMenu(x, y) {
     showContextMenu([
       {
         label: '📂  Open in Explorer',
@@ -632,7 +606,7 @@ function renderProjectItem(project, isActive, depth) {
             }
           });
 
-          showContextMenu(choices, e.clientX, e.clientY);
+          showContextMenu(choices, x, y);
         }
       },
       'sep',
@@ -645,7 +619,38 @@ function renderProjectItem(project, isActive, depth) {
           showToast(`Project "${project.name}" removed.`, 'info');
         },
       },
-    ], e.clientX, e.clientY);
+    ], x, y);
+  }
+
+  // Right click context menu on project item
+  item.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openProjectContextMenu(e.clientX, e.clientY);
+  });
+
+  // Drag listeners on project items
+  item.addEventListener('dragstart', (e) => {
+    item.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', project.id);
+    e.dataTransfer.effectAllowed = 'move';
+    document.getElementById('sidebar-root-drop')?.classList.remove('hidden');
+  });
+
+  item.addEventListener('dragend', () => {
+    item.classList.remove('dragging');
+    document.getElementById('sidebar-root-drop')?.classList.add('hidden');
+  });
+
+  item.addEventListener('click', (e) => {
+    if (e.target === ctxBtn) return;
+    setSelectedProject(project.id);
+  });
+
+  ctxBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const rect = ctxBtn.getBoundingClientRect();
+    openProjectContextMenu(rect.left, rect.bottom);
   });
 
   return item;

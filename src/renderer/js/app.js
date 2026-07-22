@@ -5,8 +5,11 @@ import { mountVersionList } from './components/version-list.js';
 import { mountToolbar } from './components/toolbar.js';
 import { $, el } from './utils/dom.js';
 import { on } from './event-bus.js';
+import { initTheme } from './utils/theme.js';
 
 async function init() {
+  // Initialize theme
+  initTheme();
   // Load data
   const [projects, labels, settings] = await Promise.all([
     window.electronAPI.getProjects(),
