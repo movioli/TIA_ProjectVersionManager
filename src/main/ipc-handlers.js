@@ -2,7 +2,7 @@ const { ipcMain, dialog, shell, app } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { generateId, copyFolderRecursive, ensureDir } = require('./utils');
-const { createSnapshot, restoreVersion, deleteVersion, importSnapshot } = require('./snapshot-manager');
+const { createSnapshot, restoreVersion, deleteVersion, deleteVersions, importSnapshot } = require('./snapshot-manager');
 const { compareXmlExports } = require('./diff-engine');
 const { detectTiaInstallations, pickInstallation } = require('./tia-detector');
 const { exportSnapshotToXml } = require('./openness-exporter');
@@ -155,6 +155,26 @@ function registerHandlers(store, getMainWindow) {
     for (const key of compareResultCache.keys()) {
       if (key.includes(versionId)) compareResultCache.delete(key);
     }
+  });
+
+  ipcMain.handle('versions:deleteMany', (_e, { items }) => {
+    const list = Array.isArray(items) ? items : [];
+    const win = getMainWindow();
+    const result = deleteVersions(store, list, ({ done, total, label }) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('progress:update', {
+          operation: 'cleanup',
+          percent: total > 0 ? Math.round((done / total) * 100) : 0,
+          currentFile: label || '',
+        });
+      }
+    });
+    for (const { versionId } of result.deleted) {
+      for (const key of compareResultCache.keys()) {
+        if (key.includes(versionId)) compareResultCache.delete(key);
+      }
+    }
+    return result;
   });
 
   ipcMain.handle('versions:restore', async (_e, { projectId, versionId, createBackup }) => {

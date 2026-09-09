@@ -150,20 +150,39 @@ async function restoreVersion(store, { projectId, versionId, createBackup = true
 }
 
 function deleteVersion(store, { projectId, versionId }) {
-  const project = store.getProject(projectId);
-  if (!project) throw new Error(`Project not found: ${projectId}`);
+  const result = deleteVersions(store, [{ projectId, versionId }]);
+  if (result.errors.length) throw new Error(result.errors[0].message);
+}
 
-  const versionIndex = project.versions.findIndex(v => v.id === versionId);
-  if (versionIndex === -1) throw new Error(`Version not found: ${versionId}`);
+function deleteVersions(store, items, progressCb) {
+  const deleted = [];
+  const errors = [];
+  const total = items.length;
 
-  const version = project.versions[versionIndex];
+  for (let i = 0; i < items.length; i++) {
+    const { projectId, versionId } = items[i];
+    try {
+      const project = store.getProject(projectId);
+      if (!project) throw new Error(`Project not found: ${projectId}`);
 
-  if (version.snapshotPath && fs.existsSync(version.snapshotPath)) {
-    fs.rmSync(version.snapshotPath, { recursive: true, force: true });
+      const versionIndex = project.versions.findIndex(v => v.id === versionId);
+      if (versionIndex === -1) throw new Error(`Version not found: ${versionId}`);
+
+      const version = project.versions[versionIndex];
+      if (version.snapshotPath && fs.existsSync(version.snapshotPath)) {
+        fs.rmSync(version.snapshotPath, { recursive: true, force: true });
+      }
+      project.versions.splice(versionIndex, 1);
+      deleted.push({ projectId, versionId });
+      if (progressCb) progressCb({ done: deleted.length + errors.length, total, label: version.label });
+    } catch (err) {
+      errors.push({ projectId, versionId, message: err.message });
+      if (progressCb) progressCb({ done: deleted.length + errors.length, total, label: versionId });
+    }
   }
 
-  project.versions.splice(versionIndex, 1);
-  store.save();
+  if (deleted.length) store.save();
+  return { deleted, errors };
 }
 
 /**
@@ -206,4 +225,4 @@ async function importSnapshot(store, { projectId, sourcePath, label, labelIds, n
   return version;
 }
 
-module.exports = { createSnapshot, restoreVersion, deleteVersion, importSnapshot };
+module.exports = { createSnapshot, restoreVersion, deleteVersion, deleteVersions, importSnapshot };

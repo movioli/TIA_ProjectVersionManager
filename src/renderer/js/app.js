@@ -1,8 +1,9 @@
-import { setProjects, setLabels } from './state.js';
+import { setProjects, setLabels, getActiveView } from './state.js';
 import { api } from './api.js';
 import { mountSidebar } from './components/sidebar.js';
 import { mountVersionList } from './components/version-list.js';
 import { mountToolbar } from './components/toolbar.js';
+import { mountCleanupView } from './components/cleanup-view.js';
 import { $, el } from './utils/dom.js';
 import { on } from './event-bus.js';
 import { initTheme } from './utils/theme.js';
@@ -33,6 +34,17 @@ async function init() {
   mountSidebar($('#sidebar'));
   mountToolbar($('#main-toolbar'));
   mountVersionList($('#version-list-container'), $('#main-toolbar'));
+  mountCleanupView($('#cleanup-view'));
+
+  const snapshotsView = $('#snapshots-view');
+  const cleanupView = $('#cleanup-view');
+  function applyActiveView(view) {
+    const isCleanup = view === 'cleanup';
+    snapshotsView?.classList.toggle('hidden', isCleanup);
+    cleanupView?.classList.toggle('hidden', !isCleanup);
+  }
+  applyActiveView(getActiveView());
+  on('state:view-changed', applyActiveView);
 
   // Global progress bar (thin line under toolbar)
   const progressWrap = $('#progress-bar-wrap');

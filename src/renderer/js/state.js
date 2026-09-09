@@ -5,12 +5,27 @@ const state = {
   labels: [],
   selectedProjectId: null,
   diffSelectionIds: [],   // max 2 version IDs checked for diff
+  activeView: 'snapshots', // 'snapshots' | 'cleanup'
 };
 
 export function getProjects()          { return state.projects; }
 export function getLabels()            { return state.labels; }
 export function getSelectedProjectId() { return state.selectedProjectId; }
 export function getDiffSelection()     { return state.diffSelectionIds; }
+export function getActiveView()        { return state.activeView; }
+
+function ensureSnapshotsView() {
+  if (state.activeView !== 'snapshots') {
+    state.activeView = 'snapshots';
+    emit('state:view-changed', 'snapshots');
+  }
+}
+
+export function setActiveView(view) {
+  if (state.activeView === view) return;
+  state.activeView = view;
+  emit('state:view-changed', view);
+}
 
 export function getSelectedProject() {
   return state.projects.find(p => p.id === state.selectedProjectId) || null;
@@ -29,6 +44,7 @@ export function setLabels(labels) {
 export function setSelectedProject(id) {
   state.selectedProjectId = id;
   state.diffSelectionIds = [];
+  ensureSnapshotsView();
   emit('state:selection-changed', id);
 }
 
@@ -38,6 +54,7 @@ export function addProject(project) {
   // Auto-select the newly added project
   state.selectedProjectId = project.id;
   state.diffSelectionIds = [];
+  ensureSnapshotsView();
   emit('state:selection-changed', project.id);
 }
 

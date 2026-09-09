@@ -11,6 +11,7 @@ export function mountVersionList(containerEl, toolbarEl) {
 
   on('state:selection-changed',      () => render(containerEl));
   on('state:versions-changed',       () => render(containerEl));
+  on('state:projects-changed',       () => render(containerEl));
   on('state:diff-selection-changed', (ids) => updateToolbarDiffBtn(toolbarEl, ids));
 }
 

@@ -1,6 +1,6 @@
 import { el, empty, showContextMenu, showToast } from '../utils/dom.js';
 import { on } from '../event-bus.js';
-import { getProjects, getSelectedProjectId, setSelectedProject, removeProject, updateProject, getGroups } from '../state.js';
+import { getProjects, getSelectedProjectId, setSelectedProject, removeProject, updateProject, getGroups, setActiveView, getActiveView } from '../state.js';
 import { api } from '../api.js';
 import { openAddProjectModal } from './modals/modal-add-project.js';
 
@@ -137,6 +137,11 @@ export function mountSidebar(containerEl) {
     el('button', {
       class: 'btn btn-ghost',
       style: { width: '100%', justifyContent: 'flex-start', fontSize: '12px' },
+      id: 'btn-cleanup',
+    }, ['🧹  Cleanup Snapshots']),
+    el('button', {
+      class: 'btn btn-ghost',
+      style: { width: '100%', justifyContent: 'flex-start', fontSize: '12px' },
       id: 'btn-label-manager',
     }, ['⬡  Manage Labels']),
     el('button', {
@@ -145,6 +150,14 @@ export function mountSidebar(containerEl) {
       id: 'btn-settings',
     }, ['⚙  Settings']),
   ]);
+
+  const cleanupBtn = footerEl.querySelector('#btn-cleanup');
+  cleanupBtn?.addEventListener('click', () => setActiveView('cleanup'));
+  const syncCleanupBtn = () => {
+    cleanupBtn?.classList.toggle('active-view-btn', getActiveView() === 'cleanup');
+  };
+  syncCleanupBtn();
+  on('state:view-changed', syncCleanupBtn);
 
   footerEl.querySelector('#btn-label-manager')?.addEventListener('click', async () => {
     const { openLabelManagerModal } = await import('./modals/modal-label-manager.js');

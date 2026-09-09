@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   createSnapshot:  (data)      => ipcRenderer.invoke('versions:create', data),
   importSnapshot:  (data)      => ipcRenderer.invoke('versions:import', data),
   deleteVersion:  (pid, vid)   => ipcRenderer.invoke('versions:delete', { projectId: pid, versionId: vid }),
+  deleteVersions: (items)      => ipcRenderer.invoke('versions:deleteMany', { items }),
   restoreVersion: (pid, vid, createBackup) => ipcRenderer.invoke('versions:restore', { projectId: pid, versionId: vid, createBackup }),
 
   // Diff

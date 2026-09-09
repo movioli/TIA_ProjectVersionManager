@@ -95,6 +95,9 @@
 #sidebar-footer {
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 /* ── Main panel ─────────────────────────────────────────────────────── */
@@ -104,6 +107,21 @@
   flex-direction: column;
   background: var(--bg-primary);
   overflow: hidden;
+}
+
+#snapshots-view,
+#cleanup-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+#snapshots-view.hidden,
+#cleanup-view.hidden { display: none; }
+
+#cleanup-view > .empty-state {
+  flex: 1;
 }
 
 #main-toolbar {

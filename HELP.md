@@ -44,6 +44,12 @@ Before you can snapshot or compare projects, you need to configure the **Working
 2. Click the **Restore** button.
 3. By default, the app creates an automatic backup snapshot of your current project state before overwriting it.
 
+### Cleaning up snapshots
+1. Open **Cleanup Snapshots** in the sidebar.
+2. Filter with **Older than** (days / weeks / months / years) and optionally a single project.
+3. **Keep newest N per project** is on by default so recent snapshots stay protected.
+4. Select rows, then **Delete selected** — or **Keep selected** to delete everything else in the current filtered list.
+
 ---
 
 ## 4. Comparing Versions & Semantic Diffing

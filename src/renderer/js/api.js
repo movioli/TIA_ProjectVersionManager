@@ -18,6 +18,7 @@ export const api = {
 
   createSnapshot: (data)       => call(window.electronAPI.createSnapshot, data),
   deleteVersion:  (pid, vid)   => call(window.electronAPI.deleteVersion, pid, vid),
+  deleteVersions: (items)      => call(window.electronAPI.deleteVersions, items),
   restoreVersion: (pid, vid, createBackup) => call(window.electronAPI.restoreVersion, pid, vid, createBackup),
 
   getLabels:      ()           => call(window.electronAPI.getLabels),
