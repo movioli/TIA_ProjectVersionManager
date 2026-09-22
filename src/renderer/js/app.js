@@ -1,4 +1,4 @@
-import { setProjects, setLabels, getActiveView } from './state.js';
+import { setProjects, setLabels, getActiveView, getSelectedProjectId, setWorkingState } from './state.js';
 import { api } from './api.js';
 import { mountSidebar } from './components/sidebar.js';
 import { mountVersionList } from './components/version-list.js';
@@ -45,6 +45,23 @@ async function init() {
   }
   applyActiveView(getActiveView());
   on('state:view-changed', applyActiveView);
+
+  async function refreshWorkingState() {
+    const id = getSelectedProjectId();
+    if (!id) {
+      setWorkingState(null, null);
+      return;
+    }
+    try {
+      const data = await api.getWorkingState(id);
+      if (getSelectedProjectId() !== id) return;
+      setWorkingState(id, data);
+    } catch (_) {}
+  }
+  on('state:selection-changed', refreshWorkingState);
+  on('state:projects-changed', refreshWorkingState);
+  window.electronAPI.onWindowFocus(refreshWorkingState);
+  refreshWorkingState();
 
   // Global progress bar (thin line under toolbar)
   const progressWrap = $('#progress-bar-wrap');

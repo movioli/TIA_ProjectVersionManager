@@ -44,6 +44,11 @@ Before you can snapshot or compare projects, you need to configure the **Working
 2. Click the **Restore** button.
 3. By default, the app creates an automatic backup snapshot of your current project state before overwriting it.
 
+### Working-copy status
+After a snapshot or a restore, the toolbar shows whether the project folder still matches that snapshot (**Equal**) or the `.apXX` file was saved later (**Edited**, with the save time). Until then the status is **Not tracked yet**.
+When importing a snapshot the external folder is **moved** into the snapshot history. Check **Keep a copy (slower)** to leave the original in place.
+You can also check **Copy into the working directory and set as baseline** to overwrite the project folder and start tracking from that import. **Create backup before copying** is off unless you turn it on.
+
 ### Cleaning up snapshots
 1. Open **Cleanup Snapshots** in the sidebar.
 2. Filter with **Older than** (days / weeks / months / years) and optionally a single project.

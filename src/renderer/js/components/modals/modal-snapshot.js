@@ -1,7 +1,7 @@
 import { createModal } from './modal-base.js';
 import { el, showToast } from '../../utils/dom.js';
 import { api } from '../../api.js';
-import { getLabels, addVersion } from '../../state.js';
+import { getLabels, setProjects } from '../../state.js';
 import { emit } from '../../event-bus.js';
 
 export function openSnapshotModal(project) {
@@ -97,13 +97,13 @@ export function openSnapshotModal(project) {
     confirmBtn.textContent = 'Working...';
 
     try {
-      const version = await api.createSnapshot({
+      await api.createSnapshot({
         projectId: project.id,
         label,
         labelIds: [...selectedLabelIds],
         note: noteInput.value.trim(),
       });
-      addVersion(project.id, version);
+      setProjects(await api.getProjects());
       showToast(`Snapshot "${label}" created.`, 'success');
       close();
     } catch (_) {

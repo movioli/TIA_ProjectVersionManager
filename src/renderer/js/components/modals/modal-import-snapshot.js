@@ -1,6 +1,7 @@
 import { createModal } from './modal-base.js';
 import { el, showToast } from '../../utils/dom.js';
-import { getLabels, addVersion } from '../../state.js';
+import { getLabels, setProjects } from '../../state.js';
+import { api } from '../../api.js';
 
 export function openImportSnapshotModal(project) {
   const labels = getLabels();
@@ -43,6 +44,29 @@ export function openImportSnapshotModal(project) {
   // ── Note ─────────────────────────────────────────────────────────────
   const noteInput = el('textarea', { class: 'input', placeholder: 'Source, version number, contact person…', rows: 3 });
 
+  const keepCopyCheck = el('input', { type: 'checkbox', id: 'import-keep-copy' });
+  const baselineCheck = el('input', { type: 'checkbox', id: 'import-as-baseline' });
+  const backupCheck = el('input', { type: 'checkbox', id: 'import-baseline-backup' });
+  backupCheck.disabled = true;
+
+  const infoText = el('span', {}, [
+    ' — the external folder will be moved into this project\'s snapshot history.',
+  ]);
+
+  function syncImportOptions() {
+    const keepCopy = keepCopyCheck.checked;
+    infoText.textContent = keepCopy
+      ? ' — the external folder will be copied into this project\'s snapshot history. The original stays in place.'
+      : ' — the external folder will be moved into this project\'s snapshot history.';
+    backupCheck.disabled = !baselineCheck.checked;
+    if (!baselineCheck.checked) backupCheck.checked = false;
+    const warn = document.getElementById('import-baseline-warn');
+    if (warn) warn.style.display = baselineCheck.checked ? 'flex' : 'none';
+  }
+
+  keepCopyCheck.addEventListener('change', syncImportOptions);
+  baselineCheck.addEventListener('change', syncImportOptions);
+
   // ── Progress ──────────────────────────────────────────────────────────
   const progressSection = el('div', { class: 'progress-section', style: { display: 'none' } }, [
     el('div', { class: 'progress-label' }, [
@@ -59,7 +83,7 @@ export function openImportSnapshotModal(project) {
     }, [
       `Importing into: `,
       el('strong', {}, [project.name]),
-      ` — the external project will be copied as a new snapshot in this project's history.`,
+      infoText,
     ]),
     el('div', { class: 'form-group' }, [
       el('label', { class: 'form-label' }, ['External Project File (.ap??)']),
@@ -78,6 +102,21 @@ export function openImportSnapshotModal(project) {
       el('label', { class: 'form-label' }, ['Note (optional)']),
       noteInput,
     ]),
+    el('label', {
+      style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)', cursor: 'pointer' },
+    }, [keepCopyCheck, 'Keep a copy (slower)']),
+    el('label', {
+      style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)', cursor: 'pointer' },
+    }, [baselineCheck, 'Copy into the working directory and set as baseline']),
+    el('div', { class: 'warning-box', id: 'import-baseline-warn', style: { display: 'none' } }, [
+      el('span', {}, ['⚠']),
+      el('div', {}, [
+        'The current project folder will be overwritten with this snapshot and set as the working-copy baseline.',
+      ]),
+    ]),
+    el('label', {
+      style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)', cursor: 'pointer' },
+    }, [backupCheck, 'Create backup before copying']),
     progressSection,
   ].filter(Boolean));
 
@@ -109,25 +148,45 @@ export function openImportSnapshotModal(project) {
     if (!sourceFolder) return;
     confirmBtn.disabled = true;
     cancelBtn.disabled = true;
+    keepCopyCheck.disabled = true;
+    baselineCheck.disabled = true;
+    backupCheck.disabled = true;
     confirmBtn.textContent = 'Importing...';
 
     window.electronAPI.onProgress(progressHandler);
 
+    let imported = null;
     try {
-      const version = await window.electronAPI.importSnapshot({
+      imported = await window.electronAPI.importSnapshot({
         projectId: project.id,
         sourcePath: sourceFolder,
         label: labelInput.value.trim() || 'Imported Snapshot',
         labelIds: [...selectedLabelIds],
         note: noteInput.value.trim(),
+        mode: keepCopyCheck.checked ? 'copy' : 'move',
       });
-      addVersion(project.id, version);
-      showToast(`Snapshot "${version.label}" imported.`, 'success');
+      if (baselineCheck.checked) {
+        await api.restoreVersion(project.id, imported.id, backupCheck.checked);
+      }
+      setProjects(await api.getProjects());
+      showToast(
+        baselineCheck.checked
+          ? `Snapshot "${imported.label}" imported and set as baseline.`
+          : `Snapshot "${imported.label}" imported.`,
+        'success',
+      );
       close();
     } catch (err) {
-      showToast(err?.message || 'Import failed.', 'error');
+      if (imported) {
+        try { setProjects(await api.getProjects()); } catch (_) {}
+      } else {
+        showToast(err?.message || 'Import failed.', 'error');
+      }
       confirmBtn.disabled = false;
       cancelBtn.disabled = false;
+      keepCopyCheck.disabled = false;
+      baselineCheck.disabled = false;
+      syncImportOptions();
       confirmBtn.textContent = 'Import Snapshot';
     } finally {
       window.electronAPI.offProgress(progressHandler);

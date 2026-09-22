@@ -45,6 +45,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectExeFile:     ()        => ipcRenderer.invoke('dialog:selectExeFile'),
   openInExplorer: (path)       => ipcRenderer.invoke('dialog:openInExplorer', { path }),
   openInTia:      (folderPath) => ipcRenderer.invoke('project:openInTia', { folderPath }),
+  getWorkingState:(projectId) => ipcRenderer.invoke('project:workingState', { projectId }),
 
   // Window controls
   minimize:       ()           => ipcRenderer.invoke('window:minimize'),
@@ -54,6 +55,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Progress stream
   onProgress:        (cb) => ipcRenderer.on('progress:update',    (_e, data) => cb(data)),
   offProgress:       (cb) => ipcRenderer.removeListener('progress:update', cb),
+  onWindowFocus:     (cb) => ipcRenderer.on('app:windowFocus', () => cb()),
 
   // Detailed export status for the diff modal
   onExportStatus:    (cb) => ipcRenderer.on('diff:exportStatus',    (_e, data) => cb(data)),

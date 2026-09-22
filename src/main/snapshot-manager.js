@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { copyFolderRecursive, getFolderStats, checkTiaLockFiles, clearFolderContents, ensureDir } = require('./utils');
+const { findProjectFile } = require('./openness-exporter');
+
+const APXX_MTIME_TOLERANCE_MS = 2000;
 
 /**
  * Generate a human-readable, Windows-safe timestamp string.
@@ -82,6 +85,7 @@ async function createSnapshot(store, { projectId, label, labelIds, note }, progr
   };
 
   project.versions.push(version);
+  captureWorkingCopy(project, version.id);
   store.save();
 
   return version;
@@ -144,9 +148,54 @@ async function restoreVersion(store, { projectId, versionId, createBackup = true
 
   project.lastRestoredVersionId = versionId;
   project.lastRestoredAt = new Date().toISOString();
+  captureWorkingCopy(project, versionId);
   store.save();
 
   return { success: true };
+}
+
+function captureWorkingCopy(project, versionId) {
+  let apxxMtimeMs = null;
+  try {
+    const apxx = findProjectFile(project.sourcePath);
+    if (apxx) apxxMtimeMs = fs.statSync(apxx).mtimeMs;
+  } catch (_) {}
+  project.workingCopy = {
+    basedOnVersionId: versionId,
+    apxxMtimeMs,
+    capturedAt: new Date().toISOString(),
+  };
+}
+
+function getWorkingState(store, projectId) {
+  const project = store.getProject(projectId);
+  if (!project) throw new Error(`Project not found: ${projectId}`);
+
+  const wc = project.workingCopy;
+  const empty = {
+    status: 'unknown',
+    basedOnVersionId: wc?.basedOnVersionId || null,
+    editedAt: null,
+    apxxName: null,
+  };
+  if (!wc?.basedOnVersionId || wc.apxxMtimeMs == null) return empty;
+
+  let apxx;
+  try { apxx = findProjectFile(project.sourcePath); } catch (_) { apxx = null; }
+  if (!apxx) return empty;
+
+  const stat = fs.statSync(apxx);
+  const apxxName = path.basename(apxx);
+  const delta = stat.mtimeMs - wc.apxxMtimeMs;
+  if (Math.abs(delta) <= APXX_MTIME_TOLERANCE_MS) {
+    return { status: 'equal', basedOnVersionId: wc.basedOnVersionId, editedAt: null, apxxName };
+  }
+  return {
+    status: 'edited',
+    basedOnVersionId: wc.basedOnVersionId,
+    editedAt: stat.mtime.toISOString(),
+    apxxName,
+  };
 }
 
 function deleteVersion(store, { projectId, versionId }) {
@@ -187,9 +236,10 @@ function deleteVersions(store, items, progressCb) {
 
 /**
  * Import an external folder as a snapshot for an existing project.
- * sourcePath: the folder to copy in (parent folder of the .ap?? file)
+ * sourcePath: parent folder of the .ap?? file.
+ * mode: 'move' (default) or 'copy'.
  */
-async function importSnapshot(store, { projectId, sourcePath, label, labelIds, note }, progressCb) {
+async function importSnapshot(store, { projectId, sourcePath, label, labelIds, note, mode }, progressCb) {
   const snapshotRoot = store.getSnapshotRoot();
   if (!snapshotRoot) throw new Error('No working directory set. Please set a working directory in Settings first.');
 
@@ -198,12 +248,29 @@ async function importSnapshot(store, { projectId, sourcePath, label, labelIds, n
 
   if (!fs.existsSync(sourcePath)) throw new Error(`Source path does not exist: ${sourcePath}`);
 
+  const move = mode !== 'copy';
+  if (move) {
+    if (pathsOverlap(sourcePath, project.sourcePath)) {
+      throw new Error('Cannot move the project working directory into the snapshot store. Choose "Keep a copy" instead.');
+    }
+    if (isInside(sourcePath, snapshotRoot)) {
+      throw new Error('This folder is already inside the snapshot store. Choose "Keep a copy" instead.');
+    }
+  }
+
+  const locks = checkTiaLockFiles(sourcePath);
+  if (locks.length > 0) {
+    throw new Error(
+      `TIA Portal appears to have this project open (${locks.length} .lck file(s) found). ` +
+      `Please close TIA Portal before importing.`
+    );
+  }
+
   const createdAt = new Date();
   const snapshotPath = buildSnapshotPath(snapshotRoot, project.name, label, createdAt);
   const finalPath = fs.existsSync(snapshotPath) ? snapshotPath + '_' + Date.now() : snapshotPath;
-  ensureDir(finalPath);
 
-  await copyFolderRecursive(sourcePath, finalPath, progressCb);
+  await placeImportedFolder(sourcePath, finalPath, move, progressCb);
 
   const { sizeBytes, fileCount } = getFolderStats(finalPath);
 
@@ -217,7 +284,7 @@ async function importSnapshot(store, { projectId, sourcePath, label, labelIds, n
     snapshotPath: finalPath,
     sizeBytes,
     fileCount,
-    imported: true,   // mark as externally imported
+    imported: true,
   };
 
   project.versions.push(version);
@@ -225,4 +292,34 @@ async function importSnapshot(store, { projectId, sourcePath, label, labelIds, n
   return version;
 }
 
-module.exports = { createSnapshot, restoreVersion, deleteVersion, deleteVersions, importSnapshot };
+function pathsOverlap(a, b) {
+  if (!a || !b) return false;
+  return isInside(a, b) || isInside(b, a);
+}
+
+function isInside(child, parent) {
+  const c = path.resolve(child).toLowerCase();
+  const p = path.resolve(parent).toLowerCase();
+  return c === p || c.startsWith(p + path.sep);
+}
+
+async function placeImportedFolder(sourcePath, finalPath, move, progressCb) {
+  if (!move) {
+    ensureDir(finalPath);
+    await copyFolderRecursive(sourcePath, finalPath, progressCb);
+    return;
+  }
+
+  ensureDir(path.dirname(finalPath));
+  try {
+    fs.renameSync(sourcePath, finalPath);
+    if (progressCb) progressCb({ currentFile: path.basename(finalPath), copied: 1, total: 1 });
+  } catch (err) {
+    if (err.code !== 'EXDEV') throw err;
+    ensureDir(finalPath);
+    await copyFolderRecursive(sourcePath, finalPath, progressCb);
+    fs.rmSync(sourcePath, { recursive: true, force: true });
+  }
+}
+
+module.exports = { createSnapshot, restoreVersion, deleteVersion, deleteVersions, importSnapshot, getWorkingState };

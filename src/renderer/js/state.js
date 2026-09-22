@@ -6,6 +6,7 @@ const state = {
   selectedProjectId: null,
   diffSelectionIds: [],   // max 2 version IDs checked for diff
   activeView: 'snapshots', // 'snapshots' | 'cleanup'
+  workingState: null,     // { projectId, status, basedOnVersionId, editedAt, apxxName }
 };
 
 export function getProjects()          { return state.projects; }
@@ -13,6 +14,12 @@ export function getLabels()            { return state.labels; }
 export function getSelectedProjectId() { return state.selectedProjectId; }
 export function getDiffSelection()     { return state.diffSelectionIds; }
 export function getActiveView()        { return state.activeView; }
+export function getWorkingState()     { return state.workingState; }
+
+export function setWorkingState(projectId, data) {
+  state.workingState = data ? { projectId, ...data } : null;
+  emit('state:working-state-changed', state.workingState);
+}
 
 function ensureSnapshotsView() {
   if (state.activeView !== 'snapshots') {

@@ -2,7 +2,7 @@ const { ipcMain, dialog, shell, app } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { generateId, copyFolderRecursive, ensureDir } = require('./utils');
-const { createSnapshot, restoreVersion, deleteVersion, deleteVersions, importSnapshot } = require('./snapshot-manager');
+const { createSnapshot, restoreVersion, deleteVersion, deleteVersions, importSnapshot, getWorkingState } = require('./snapshot-manager');
 const { compareXmlExports } = require('./diff-engine');
 const { detectTiaInstallations, pickInstallation } = require('./tia-detector');
 const { exportSnapshotToXml } = require('./openness-exporter');
@@ -120,6 +120,10 @@ function registerHandlers(store, getMainWindow) {
     return project;
   });
 
+  ipcMain.handle('project:workingState', (_e, { projectId }) => {
+    return getWorkingState(store, projectId);
+  });
+
   // ─── Versions / Snapshots ────────────────────────────────────────────────
 
   ipcMain.handle('versions:create', async (_e, { projectId, label, labelIds, note }) => {
@@ -136,18 +140,19 @@ function registerHandlers(store, getMainWindow) {
     return await createSnapshot(store, { projectId, label, labelIds, note }, progressCb);
   });
 
-  ipcMain.handle('versions:import', async (_e, { projectId, sourcePath, label, labelIds, note }) => {
+  ipcMain.handle('versions:import', async (_e, { projectId, sourcePath, label, labelIds, note, mode }) => {
     const win = getMainWindow();
+    const moving = mode !== 'copy';
     const progressCb = ({ currentFile, copied, total }) => {
       if (win && !win.isDestroyed()) {
         win.webContents.send('progress:update', {
-          operation: 'Importing...',
+          operation: moving ? 'Moving...' : 'Copying...',
           percent: total > 0 ? Math.round((copied / total) * 100) : 0,
           currentFile: currentFile || '',
         });
       }
     };
-    return await importSnapshot(store, { projectId, sourcePath, label, labelIds, note }, progressCb);
+    return await importSnapshot(store, { projectId, sourcePath, label, labelIds, note, mode }, progressCb);
   });
 
   ipcMain.handle('versions:delete', (_e, { projectId, versionId }) => {

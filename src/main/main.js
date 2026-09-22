@@ -37,6 +37,12 @@ function createWindow() {
     mainWindow.show();
   });
 
+  mainWindow.on('focus', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app:windowFocus');
+    }
+  });
+
   // F12 or Ctrl+Shift+I opens DevTools
   mainWindow.webContents.on('before-input-event', (_e, input) => {
     if (input.key === 'F12' ||

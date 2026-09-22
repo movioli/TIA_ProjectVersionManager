@@ -317,6 +317,23 @@
   border-left: 3px solid var(--accent);
   background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
 }
+.version-card.edited-version {
+  border-left-color: var(--warning);
+}
+
+.wc-mark.equal { color: var(--success, #a6e3a1); font-weight: 700; }
+.wc-mark.edited { color: var(--warning); font-weight: 600; }
+
+.working-status {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.working-status.unknown { color: var(--text-muted); }
+.working-status.equal { color: var(--success, #a6e3a1); }
+.working-status.edited { color: var(--warning); }
 
 .version-card .card-checkbox {
   margin-top: 3px;

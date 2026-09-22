@@ -140,6 +140,13 @@
   font-weight: 600;
   color: var(--text-primary);
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#main-toolbar .project-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

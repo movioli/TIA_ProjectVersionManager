@@ -1,6 +1,6 @@
 import { el, empty, showContextMenu, showToast } from '../utils/dom.js';
 import { on } from '../event-bus.js';
-import { getSelectedProject, getLabels, getDiffSelection, toggleDiffSelection, removeVersion } from '../state.js';
+import { getSelectedProject, getLabels, getDiffSelection, toggleDiffSelection, removeVersion, getWorkingState } from '../state.js';
 import { api } from '../api.js';
 import { formatDate, formatRelativeDate, formatBytes } from '../utils/format.js';
 import { openRestoreConfirmModal } from './modals/modal-restore-confirm.js';
@@ -12,6 +12,7 @@ export function mountVersionList(containerEl, toolbarEl) {
   on('state:selection-changed',      () => render(containerEl));
   on('state:versions-changed',       () => render(containerEl));
   on('state:projects-changed',       () => render(containerEl));
+  on('state:working-state-changed',  () => render(containerEl));
   on('state:diff-selection-changed', (ids) => updateToolbarDiffBtn(toolbarEl, ids));
 }
 
@@ -49,27 +50,19 @@ function render(container) {
   const labels = getLabels();
   const labelMap = new Map(labels.map(l => [l.id, l]));
   const diffSelection = getDiffSelection();
-
-  let highlightId;
-  if (project.lastRestoredAt) {
-    const newestCreatedAt = versions[0]?.createdAt;
-    if (newestCreatedAt && new Date(newestCreatedAt) > new Date(project.lastRestoredAt)) {
-      highlightId = versions[0].id;
-    } else {
-      highlightId = project.lastRestoredVersionId;
-    }
-  } else {
-    highlightId = versions[0]?.id;
-  }
+  const ws = getWorkingState();
+  const baselineId = project.workingCopy?.basedOnVersionId || null;
+  const live = ws && ws.projectId === project.id ? ws : null;
 
   for (const version of versions) {
-    container.appendChild(renderVersionCard(project, version, labelMap, diffSelection, highlightId));
+    container.appendChild(renderVersionCard(project, version, labelMap, diffSelection, baselineId, live));
   }
 }
 
-function renderVersionCard(project, version, labelMap, diffSelection, highlightId) {
+function renderVersionCard(project, version, labelMap, diffSelection, baselineId, live) {
   const isSelectedForDiff = diffSelection.includes(version.id);
-  const isHighlighted = version.id === highlightId;
+  const isBaseline = version.id === baselineId;
+  const status = isBaseline && live ? live.status : null;
 
   const checkbox = el('input', { type: 'checkbox', class: 'card-checkbox', title: 'Select for diff comparison' });
   checkbox.checked = isSelectedForDiff;
@@ -90,11 +83,24 @@ function renderVersionCard(project, version, labelMap, diffSelection, highlightI
     }
   }
 
-  const metaEl = el('div', { class: 'card-meta' }, [
+  const metaBits = [
     el('span', {}, [`${version.fileCount ?? '?'} files`]),
     el('span', {}, [formatBytes(version.sizeBytes ?? 0)]),
     el('span', { title: formatDate(version.createdAt) }, [formatRelativeDate(version.createdAt)]),
-  ]);
+  ];
+  if (isBaseline && status === 'equal') {
+    metaBits.push(el('span', { class: 'wc-mark equal', title: 'Working copy matches this snapshot' }, ['✓']));
+  }
+  if (isBaseline && status === 'edited') {
+    const when = live.editedAt ? formatRelativeDate(live.editedAt) : '';
+    const exact = live.editedAt ? formatDate(live.editedAt) : '';
+    metaBits.push(el('span', {
+      class: 'wc-mark edited',
+      title: exact ? `Saved ${exact}` : 'Working copy was edited',
+    }, [`✎${when ? ` ${when}` : ''}`]));
+  }
+
+  const metaEl = el('div', { class: 'card-meta' }, metaBits);
 
   const cardBody = el('div', { class: 'card-body' }, [
     el('div', { class: 'card-header' }, [
@@ -116,7 +122,7 @@ function renderVersionCard(project, version, labelMap, diffSelection, highlightI
   const actions = el('div', { class: 'card-actions' }, [restoreBtn, moreBtn]);
 
   const card = el('div', {
-    class: `version-card${isSelectedForDiff ? ' selected-for-diff' : ''}${isHighlighted ? ' current-version' : ''}`,
+    class: `version-card${isSelectedForDiff ? ' selected-for-diff' : ''}${isBaseline ? ' current-version' : ''}${status === 'edited' ? ' edited-version' : ''}`,
   }, [checkbox, cardBody, actions]);
 
   checkbox.addEventListener('change', () => {

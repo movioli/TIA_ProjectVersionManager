@@ -1,6 +1,6 @@
 {
   "name": "tia-project-version-manager",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Version manager for Siemens TIA Portal projects",
   "main": "src/main/main.js",
   "scripts": {

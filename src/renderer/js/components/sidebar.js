@@ -1,6 +1,6 @@
 import { el, empty, showContextMenu, showToast } from '../utils/dom.js';
 import { on } from '../event-bus.js';
-import { getProjects, getSelectedProjectId, setSelectedProject, removeProject, updateProject, getGroups, setActiveView, getActiveView } from '../state.js';
+import { getProjects, getSelectedProjectId, setSelectedProject, removeProject, updateProject, getGroups, setActiveView, getActiveView, getWorkingState } from '../state.js';
 import { api } from '../api.js';
 import { openAddProjectModal } from './modals/modal-add-project.js';
 
@@ -138,7 +138,7 @@ export function mountSidebar(containerEl) {
       class: 'btn btn-ghost',
       style: { width: '100%', justifyContent: 'flex-start', fontSize: '12px' },
       id: 'btn-cleanup',
-    }, ['🧹  Cleanup Snapshots']),
+    }, ['⌫  Cleanup Snapshots']),
     el('button', {
       class: 'btn btn-ghost',
       style: { width: '100%', justifyContent: 'flex-start', fontSize: '12px' },
@@ -194,6 +194,7 @@ export function mountSidebar(containerEl) {
   on('state:projects-changed', () => renderList());
   on('state:selection-changed', () => renderList());
   on('state:versions-changed', () => renderList());
+  on('state:working-state-changed', () => renderList());
 
   // Add sidebar resizer
   const resizer = el('div', { class: 'sidebar-resizer' });
@@ -541,6 +542,10 @@ function renderTree(node, depth, container, selectedId) {
 
 function renderProjectItem(project, isActive, depth) {
   const versionCount = project.versions?.length || 0;
+  const ws = isActive ? getWorkingState() : null;
+  const mark = ws && ws.projectId === project.id && ws.status === 'equal' ? ' · ✓'
+    : ws && ws.projectId === project.id && ws.status === 'edited' ? ' · ✎'
+    : '';
 
   const ctxBtn = el('button', { class: 'ctx-btn', title: 'Options' }, ['⋯']);
 
@@ -552,7 +557,7 @@ function renderProjectItem(project, isActive, depth) {
     el('div', { class: 'project-dot', style: { background: project.color } }),
     el('div', { class: 'project-info' }, [
       el('div', { class: 'name' }, [project.name]),
-      el('div', { class: 'meta' }, [`${versionCount} snapshot${versionCount !== 1 ? 's' : ''}`]),
+      el('div', { class: 'meta' }, [`${versionCount} snapshot${versionCount !== 1 ? 's' : ''}${mark}`]),
     ]),
     ctxBtn,
   ]);

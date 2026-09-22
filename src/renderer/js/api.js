@@ -29,4 +29,5 @@ export const api = {
   selectFolder:   ()           => call(window.electronAPI.selectFolder),
   openInExplorer: (path)       => call(window.electronAPI.openInExplorer, path),
   openInTia:      (folderPath) => call(window.electronAPI.openInTia, folderPath),
+  getWorkingState:(projectId) => call(window.electronAPI.getWorkingState, projectId),
 };
