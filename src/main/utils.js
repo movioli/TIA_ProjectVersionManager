@@ -118,6 +118,21 @@ function getFolderStats(folderPath) {
 }
 
 /**
+ * A project-root .info file means TIA Portal still has the project open.
+ * Returns the file path, or null.
+ */
+function findOpenTiaInfoFile(folderPath) {
+  let entries;
+  try {
+    entries = fs.readdirSync(folderPath, { withFileTypes: true });
+  } catch (_) {
+    return null;
+  }
+  const info = entries.find((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.info'));
+  return info ? path.join(folderPath, info.name) : null;
+}
+
+/**
  * Check if any .lck files exist (TIA Portal open indicator).
  */
 function checkTiaLockFiles(sourcePath) {
@@ -162,6 +177,7 @@ module.exports = {
   ensureDir,
   copyFolderRecursive,
   getFolderStats,
+  findOpenTiaInfoFile,
   checkTiaLockFiles,
   clearFolderContents,
 };

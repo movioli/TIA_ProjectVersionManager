@@ -1,7 +1,7 @@
 const { ipcMain, dialog, shell, app } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const { generateId, copyFolderRecursive, ensureDir } = require('./utils');
+const { generateId, copyFolderRecursive, ensureDir, findOpenTiaInfoFile } = require('./utils');
 const { createSnapshot, restoreVersion, deleteVersion, deleteVersions, importSnapshot, getWorkingState } = require('./snapshot-manager');
 const { compareXmlExports } = require('./diff-engine');
 const { detectTiaInstallations, pickInstallation } = require('./tia-detector');
@@ -455,6 +455,107 @@ function registerHandlers(store, getMainWindow) {
     shell.openPath(folderPath);
   });
 
+  ipcMain.handle('project:assertNotOpenInTia', (_e, { folderPath }) => {
+    assertProjectClosedInTia(folderPath);
+    return { exportRoot: store.getExportRoot() };
+  });
+
+  ipcMain.handle('dialog:saveZip', async (_e, { folderPath, suggestedName }) => {
+    const win = getMainWindow();
+    const safe = zipBaseName(folderPath, suggestedName);
+    const result = await dialog.showSaveDialog(win, {
+      title: 'Export project as ZIP',
+      defaultPath: `${safe}.zip`,
+      filters: [{ name: 'ZIP archive', extensions: ['zip'] }],
+    });
+    if (result.canceled || !result.filePath) return null;
+    return result.filePath;
+  });
+
+  ipcMain.handle('project:exportZip', async (_e, { folderPath, destPath, suggestedName }) => {
+    assertProjectClosedInTia(folderPath);
+
+    let target = destPath;
+    if (!target) {
+      const exportRoot = store.getExportRoot();
+      if (!exportRoot) {
+        throw new Error('No working directory set. Choose another location or set a working directory in Settings.');
+      }
+      ensureDir(exportRoot);
+      target = uniqueZipPath(exportRoot, zipBaseName(folderPath, suggestedName));
+    } else {
+      if (!target.toLowerCase().endsWith('.zip')) target += '.zip';
+      ensureDir(path.dirname(target));
+    }
+
+    const resolvedFolder = path.resolve(folderPath);
+    const resolvedTarget = path.resolve(target);
+    if (resolvedTarget === resolvedFolder || resolvedTarget.startsWith(resolvedFolder + path.sep)) {
+      throw new Error('The ZIP cannot be saved inside the folder being exported.');
+    }
+
+    if (fs.existsSync(resolvedTarget)) fs.unlinkSync(resolvedTarget);
+
+    sendZipProgress(getMainWindow, { operation: 'Preparing…', percent: 0, currentFile: '' });
+    const total = Math.max(countArchiveEntries(resolvedFolder), 1);
+
+    const tarExe = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
+    await new Promise((resolve, reject) => {
+      const { spawn } = require('child_process');
+      const child = spawn(tarExe, [
+        '-a', '-c', '-v', '-f', resolvedTarget,
+        '-C', path.dirname(resolvedFolder),
+        path.basename(resolvedFolder),
+      ], { windowsHide: true });
+
+      let stderr = '';
+      let buffer = '';
+      let done = 0;
+      let lastSent = 0;
+      let lastPercent = -1;
+
+      const consume = (chunk, isStderr) => {
+        buffer += chunk.toString();
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || '';
+        for (const raw of lines) {
+          const line = raw.trim();
+          if (!line) continue;
+          if (isStderr && /^tar:/i.test(line)) {
+            stderr += line + '\n';
+            continue;
+          }
+          done += 1;
+          const percent = Math.min(99, Math.round((done / total) * 100));
+          const now = Date.now();
+          if (percent === lastPercent && now - lastSent < 150) continue;
+          lastPercent = percent;
+          lastSent = now;
+          const currentFile = line.replace(/^[a-z]\s+/, '');
+          sendZipProgress(getMainWindow, {
+            operation: 'Creating ZIP…',
+            percent,
+            currentFile,
+          });
+        }
+      };
+
+      child.stdout.on('data', (chunk) => consume(chunk, false));
+      child.stderr.on('data', (chunk) => consume(chunk, true));
+      child.on('error', (err) => reject(err));
+      child.on('close', (code) => {
+        if (code === 0) {
+          sendZipProgress(getMainWindow, { operation: 'Creating ZIP…', percent: 100, currentFile: '' });
+          resolve();
+        } else {
+          reject(new Error(stderr.trim() || `tar exited with code ${code}`));
+        }
+      });
+    });
+
+    return resolvedTarget;
+  });
+
   ipcMain.handle('project:openInTia', (_e, { folderPath }) => {
     const entries = fs.readdirSync(folderPath);
     const projFile = entries.find(f => /\.ap\d+$/i.test(f));
@@ -478,6 +579,80 @@ function registerHandlers(store, getMainWindow) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function countArchiveEntries(folderPath) {
+  let count = 1;
+  function walk(dir) {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (_) {
+      return;
+    }
+    for (const entry of entries) {
+      count += 1;
+      if (entry.isDirectory()) walk(path.join(dir, entry.name));
+    }
+  }
+  walk(folderPath);
+  return count;
+}
+
+function assertProjectClosedInTia(folderPath) {
+  if (!folderPath || !fs.existsSync(folderPath)) {
+    throw new Error(`Folder does not exist: ${folderPath}`);
+  }
+  const infoFile = findOpenTiaInfoFile(folderPath);
+  if (infoFile) {
+    throw new Error(
+      `TIA Portal appears to have this project open (${path.basename(infoFile)} found). ` +
+      `Please close it before exporting a ZIP.`
+    );
+  }
+}
+
+function sendZipProgress(getMainWindow, payload) {
+  const win = getMainWindow();
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('progress:update', payload);
+  }
+}
+
+function lastSavedStamp(folderPath) {
+  let when = new Date();
+  try {
+    const entries = fs.readdirSync(folderPath, { withFileTypes: true });
+    const proj = entries.find((entry) => entry.isFile() && /\.ap\d+$/i.test(entry.name));
+    const target = proj ? path.join(folderPath, proj.name) : folderPath;
+    when = fs.statSync(target).mtime;
+  } catch (_) {}
+  const p = (n) => String(n).padStart(2, '0');
+  return `${when.getFullYear()}${p(when.getMonth() + 1)}${p(when.getDate())}_${p(when.getHours())}${p(when.getMinutes())}`;
+}
+
+function zipBaseName(folderPath, suggestedName) {
+  return `${lastSavedStamp(folderPath)}_${sanitizeZipName(suggestedName)}`;
+}
+
+function sanitizeZipName(name) {
+  const cleaned = String(name || 'project')
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
+    .replace(/[. ]+$/g, '')
+    .trim();
+  return cleaned || 'project';
+}
+
+function uniqueZipPath(dir, baseName) {
+  const first = path.join(dir, `${baseName}.zip`);
+  if (!fs.existsSync(first)) return first;
+  let n = 2;
+  let candidate = path.join(dir, `${baseName} (${n}).zip`);
+  while (fs.existsSync(candidate)) {
+    n += 1;
+    candidate = path.join(dir, `${baseName} (${n}).zip`);
+  }
+  return candidate;
+}
 
 function randomColor() {
   const colors = ['#cba6f7', '#89b4fa', '#a6e3a1', '#fab387', '#f38ba8', '#89dceb', '#f9e2af'];

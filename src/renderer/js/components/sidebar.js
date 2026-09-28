@@ -3,6 +3,7 @@ import { on } from '../event-bus.js';
 import { getProjects, getSelectedProjectId, setSelectedProject, removeProject, updateProject, getGroups, setActiveView, getActiveView, getWorkingState } from '../state.js';
 import { api } from '../api.js';
 import { openAddProjectModal } from './modals/modal-add-project.js';
+import { exportFolderAsZip } from './modals/modal-export-zip.js';
 
 let currentSearch = '';
 let currentSortMode = localStorage.getItem('tia-project-sort-mode') || 'alphabetical-asc';
@@ -573,6 +574,13 @@ function renderProjectItem(project, isActive, depth) {
         action: () => api.openInTia(project.sourcePath),
       },
       {
+        label: '📦  Export as ZIP',
+        action: () => exportFolderAsZip({
+          folderPath: project.sourcePath,
+          suggestedName: project.name,
+        }),
+      },
+      {
         label: '✏️  Edit Project Details',
         action: async () => {
           const { openEditProjectModal } = await import('./modals/modal-edit-project.js');
@@ -663,6 +671,13 @@ function renderProjectItem(project, isActive, depth) {
   item.addEventListener('click', (e) => {
     if (e.target === ctxBtn) return;
     setSelectedProject(project.id);
+  });
+
+  item.addEventListener('dblclick', (e) => {
+    if (e.target === ctxBtn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    api.openInTia(project.sourcePath);
   });
 
   ctxBtn.addEventListener('click', (e) => {

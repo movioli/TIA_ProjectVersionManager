@@ -78,6 +78,7 @@ export async function openSettingsModal() {
       el('div', { class: 'form-hint' }, [
         'The folder where your TIA Portal projects are kept. ' +
         'Snapshots are stored in a "_snapshots" subfolder here. ' +
+        'ZIP exports go to "_exports". ' +
         'Required before taking snapshots.',
       ]),
     ]),
@@ -100,6 +101,7 @@ export async function openSettingsModal() {
       }, [
         el('div', {}, ['📁 WorkingDirectory/']),
         el('div', { style: { paddingLeft: '20px' } }, ['📁 ProjectName/']),
+        el('div', { style: { paddingLeft: '20px' } }, ['📁 _exports/']),
         el('div', { style: { paddingLeft: '20px' } }, ['📁 _snapshots/']),
         el('div', { style: { paddingLeft: '40px' } }, ['📁 ProjectName/']),
         el('div', { style: { paddingLeft: '60px', color: 'var(--accent)' } }, ['📁 2026-03-13_16.12.47 - My Label/']),

@@ -29,5 +29,8 @@ export const api = {
   selectFolder:   ()           => call(window.electronAPI.selectFolder),
   openInExplorer: (path)       => call(window.electronAPI.openInExplorer, path),
   openInTia:      (folderPath) => call(window.electronAPI.openInTia, folderPath),
+  assertNotOpenInTia: (folderPath) => call(window.electronAPI.assertNotOpenInTia, folderPath),
+  saveZipDialog:  (folderPath, suggestedName) => call(window.electronAPI.saveZipDialog, folderPath, suggestedName),
+  exportZip:      (data)       => call(window.electronAPI.exportZip, data),
   getWorkingState:(projectId) => call(window.electronAPI.getWorkingState, projectId),
 };

@@ -88,6 +88,12 @@ class Store {
     const wd = this.data.settings.workingDirectory;
     return wd ? require('path').join(wd, '_snapshots') : null;
   }
+
+  /** Returns <workingDir>/_exports or null if workingDirectory not set */
+  getExportRoot() {
+    const wd = this.data.settings.workingDirectory;
+    return wd ? require('path').join(wd, '_exports') : null;
+  }
 }
 
 module.exports = Store;

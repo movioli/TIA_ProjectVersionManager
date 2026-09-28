@@ -45,6 +45,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectExeFile:     ()        => ipcRenderer.invoke('dialog:selectExeFile'),
   openInExplorer: (path)       => ipcRenderer.invoke('dialog:openInExplorer', { path }),
   openInTia:      (folderPath) => ipcRenderer.invoke('project:openInTia', { folderPath }),
+  assertNotOpenInTia: (folderPath) => ipcRenderer.invoke('project:assertNotOpenInTia', { folderPath }),
+  saveZipDialog:  (folderPath, suggestedName) => ipcRenderer.invoke('dialog:saveZip', { folderPath, suggestedName }),
+  exportZip:      (data)       => ipcRenderer.invoke('project:exportZip', data),
   getWorkingState:(projectId) => ipcRenderer.invoke('project:workingState', { projectId }),
 
   // Window controls
@@ -53,8 +56,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeWindow:    ()           => ipcRenderer.invoke('window:close'),
 
   // Progress stream
-  onProgress:        (cb) => ipcRenderer.on('progress:update',    (_e, data) => cb(data)),
-  offProgress:       (cb) => ipcRenderer.removeListener('progress:update', cb),
+  onProgress: (cb) => {
+    const wrapper = (_e, data) => cb(data);
+    cb._progressWrapper = wrapper;
+    ipcRenderer.on('progress:update', wrapper);
+  },
+  offProgress: (cb) => {
+    if (!cb._progressWrapper) return;
+    ipcRenderer.removeListener('progress:update', cb._progressWrapper);
+    delete cb._progressWrapper;
+  },
   onWindowFocus:     (cb) => ipcRenderer.on('app:windowFocus', () => cb()),
 
   // Detailed export status for the diff modal

@@ -5,6 +5,7 @@ import { api } from '../api.js';
 import { formatDate, formatRelativeDate, formatBytes } from '../utils/format.js';
 import { openRestoreConfirmModal } from './modals/modal-restore-confirm.js';
 import { openDiffModal } from './modals/modal-diff.js';
+import { exportFolderAsZip } from './modals/modal-export-zip.js';
 
 export function mountVersionList(containerEl, toolbarEl) {
   render(containerEl);
@@ -133,7 +134,8 @@ function renderVersionCard(project, version, labelMap, diffSelection, baselineId
     openRestoreConfirmModal(project, version);
   });
 
-  moreBtn.addEventListener('click', (e) => {
+  function openVersionMenu(e) {
+    e.preventDefault();
     e.stopPropagation();
     showContextMenu([
       {
@@ -143,6 +145,13 @@ function renderVersionCard(project, version, labelMap, diffSelection, baselineId
       {
         label: '🔧  Open in TIA Portal',
         action: () => api.openInTia(version.snapshotPath),
+      },
+      {
+        label: '📦  Export as ZIP',
+        action: () => exportFolderAsZip({
+          folderPath: version.snapshotPath,
+          suggestedName: version.label || 'Snapshot',
+        }),
       },
       'sep',
       {
@@ -157,7 +166,10 @@ function renderVersionCard(project, version, labelMap, diffSelection, baselineId
         },
       },
     ], e.clientX, e.clientY);
-  });
+  }
+
+  moreBtn.addEventListener('click', openVersionMenu);
+  card.addEventListener('contextmenu', openVersionMenu);
 
   return card;
 }
